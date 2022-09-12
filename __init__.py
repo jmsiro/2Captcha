@@ -24,14 +24,27 @@ Para instalar librerias se debe ingresar por terminal a la carpeta "libs"
 
 """
 
+from dis import code_info
 import requests
 from time import sleep
+from selenium import webdriver
+
+base_path = tmp_global_obj["basepath"]
+cur_path = os.path.join(base_path, 'modules', '2Captcha', 'libs')
+if cur_path not in sys.path:
+    sys.path.append(cur_path)
+
+from twocaptcha import TwoCaptcha
 
 
 """
     Obtengo el modulo que fueron invocados
 """
 module = GetParams("module")
+
+webdriver = GetGlobals("web")
+if webdriver.driver_actual_id in webdriver.driver_list:
+    driver = webdriver.driver_list[webdriver.driver_actual_id]
 
 """
     Resuelvo catpcha tipo reCaptchav2
@@ -92,6 +105,7 @@ try:
         path_ = GetParams("path")
         var_ = GetParams("result")
         print(var_)
+
         if key and path_:
             # Add these values
             API_KEY = key  # Your 2captcha API KEY
@@ -133,7 +147,36 @@ try:
                 SetVar(var_, str(recaptcha_answer))
             except Exception as e:
                 print(e)
+    
+    if module == "hCaptcha":
+        key = GetParams("key")
+        site_key = GetParams("site_key")
+        # Inspect the site, search (Ctrl+f) for "sitekey", you should find it inside de src of the hcaptcha. Copy the link address and take it from there.
+        url = GetParams("url")
+        var_ = GetParams("result")
 
+        try:
+            
+            API_KEY = key  # Your 2captcha API KEY
+            solver = TwoCaptcha(API_KEY)
+            result = solver.hcaptcha(sitekey=site_key,
+                                    url=url)
+            print(result)
+
+            if result:
+                code = result['code']
+                # driver.execute_script(
+                #     "document.querySelector(" + "'" + '[name="h-captcha-response"]' + "'" + ").innerHTML = " + "'" + code + "'")
+                # driver.execute_script(
+                #     "document.querySelector(" + "'" + '[name="g-recaptcha-response"]' + "'" + ").value = " + "'" + code + "'")
+                
+                SetVar(var_, code)
+                    
+        except Exception as e:
+            print("\x1B[" + "31;40m" + str(e) + "\x1B[" + "0m")
+            PrintException()
+            raise Exception(e)
+            
     if (module == "getCallback"):
         webdriver = GetGlobals("web")
         if webdriver.driver_actual_id in webdriver.driver_list:
